@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   CheckCircle, ArrowRight, Mail, Sparkles, Globe,
   Smartphone, CreditCard, ChefHat, Bike, Coins,
@@ -76,6 +76,41 @@ export default function App() {
     }
   };
 
+  const LazyVideo = ({ src }: { src: string }) => {
+    const videoRef = useRef<HTMLDivElement>(null);
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+            observer.disconnect();
+          }
+        },
+        { rootMargin: '300px' } // Comienza a cargar 300px antes de que aparezca en pantalla
+      );
+
+      if (videoRef.current) {
+        observer.observe(videoRef.current);
+      }
+
+      return () => observer.disconnect();
+    }, []);
+
+    return (
+      <div ref={videoRef} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {isVisible ? (
+          <video src={src} autoPlay loop muted playsInline style={{ width: '100%', height: 'auto', borderRadius: '16px' }} />
+        ) : (
+          <div style={{ width: '100%', height: '300px', background: 'rgba(234, 179, 8, 0.05)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ color: '#eab308', opacity: 0.5, fontSize: '0.9rem' }}>Cargando video...</span>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderMedia = (feature: any) => {
     if (!feature.media_url) {
       return (
@@ -89,14 +124,14 @@ export default function App() {
     if (isVideo) {
       return (
         <div className="golden-glow" style={{ borderRadius: '16px', overflow: 'hidden', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <video src={feature.media_url} autoPlay loop muted playsInline style={{ width: '100%', height: 'auto', borderRadius: '16px' }} />
+          <LazyVideo src={feature.media_url} />
         </div>
       );
     }
 
     return (
       <div className="golden-glow" style={{ borderRadius: '16px', overflow: 'hidden', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <img src={feature.media_url} alt={feature.title} style={{ width: '100%', height: 'auto', borderRadius: '16px', objectFit: 'cover' }} />
+        <img src={feature.media_url} alt={feature.title} loading="lazy" style={{ width: '100%', height: 'auto', borderRadius: '16px', objectFit: 'cover' }} />
       </div>
     );
   };
