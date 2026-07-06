@@ -813,13 +813,62 @@
   display: flex;
   gap: 1.5rem;
   overflow-x: auto;
-  padding: 3rem calc(50vw - 140px);
+  padding: 3rem 1rem; /* Removed the calc padding to allow smooth scrolling without jumping */
   scroll-snap-type: x mandatory;
   scrollbar-width: none; /* Firefox */
   -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  width: 100%;
 }
 .carousel-container::-webkit-scrollbar {
   display: none; /* Chrome/Safari */
+}
+
+/* Nav Buttons */
+.carousel-nav-btn {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(234, 179, 8, 0.4);
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #eab308;
+  cursor: pointer;
+  position: absolute;
+  z-index: 20;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
+}
+.carousel-nav-btn:hover:not(:disabled) {
+  background: rgba(234, 179, 8, 0.2);
+  transform: scale(1.1);
+}
+.carousel-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.carousel-nav-btn.left {
+  left: 10px;
+}
+.carousel-nav-btn.right {
+  right: 10px;
+}
+
+@media (max-width: 768px) {
+  .carousel-nav-btn {
+    width: 40px;
+    height: 40px;
+  }
+  .carousel-nav-btn.left { left: 5px; }
+  .carousel-nav-btn.right { right: 5px; }
+  
+  .marketing-comparison {
+    border-left: none !important;
+    border-top: 4px solid #eab308 !important;
+    border-radius: 0 0 24px 24px !important;
+  }
 }
 
 .carousel-card {
@@ -838,6 +887,14 @@
   position: relative;
   overflow: hidden;
   user-select: none;
+  flex-shrink: 0;
+}
+
+/* Add padding blocks before and after the carousel items so the active item can be centered */
+.carousel-container::before,
+.carousel-container::after {
+  content: '';
+  flex: 0 0 calc(50vw - 140px);
 }
 
 .carousel-card.active {

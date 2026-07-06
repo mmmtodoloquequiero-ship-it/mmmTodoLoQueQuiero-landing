@@ -51,7 +51,7 @@ export default function AdminPanel() {
         const { data: newApp, error: insertError } = await supabase.from('landing_apps').insert([{
           name: 'MMM Todo Lo Que Quiero Comer', 
           tagline: 'El Sistema Definitivo para Gastronomía',
-          description: 'Transformá la manera en que administras tu local. Olvidate del desorden, los papeles perdidos y los errores de caja con nuestro ecosistema 100% digital.',
+          description: 'Transformá la manera en la que administrás tu local. Olvidate del desorden, los papeles perdidos y los errores de caja con nuestro ecosistema 100% digital. Retené clientes, multiplicá tus ventas y organizá toda tu operación sin pagar múltiples aplicaciones. El verdadero TODO EN UNO para tu restaurante.',
           logo_url: '',
           apk_url: '',
           web_url: ''
