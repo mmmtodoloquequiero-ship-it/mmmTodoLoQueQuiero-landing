@@ -94,7 +94,7 @@ export default function AdminPanel() {
   };
 
   // ---------------- MEDIA UPLOAD ----------------
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: 'feature' | 'bg' | 'app_logo' | 'app_apk', entityId?: string) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: 'feature' | 'feature_before' | 'feature_after' | 'bg' | 'app_logo' | 'app_apk', entityId?: string) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -116,6 +116,12 @@ export default function AdminPanel() {
       if (type === 'feature' && entityId) {
         await supabase.from('landing_features').update({ media_url: publicUrl }).eq('id', entityId);
         setFeatures(features.map(f => f.id === entityId ? { ...f, media_url: publicUrl } : f));
+      } else if (type === 'feature_before' && entityId) {
+        await supabase.from('landing_features').update({ before_image_url: publicUrl }).eq('id', entityId);
+        setFeatures(features.map(f => f.id === entityId ? { ...f, before_image_url: publicUrl } : f));
+      } else if (type === 'feature_after' && entityId) {
+        await supabase.from('landing_features').update({ after_image_url: publicUrl }).eq('id', entityId);
+        setFeatures(features.map(f => f.id === entityId ? { ...f, after_image_url: publicUrl } : f));
       } else if (type === 'app_logo' && entityId) {
         await supabase.from('landing_apps').update({ logo_url: publicUrl }).eq('id', entityId);
         setApps(apps.map(a => a.id === entityId ? { ...a, logo_url: publicUrl } : a));
@@ -140,7 +146,8 @@ export default function AdminPanel() {
       name: 'Nueva App', 
       tagline: 'Tu frase principal acá', 
       description: 'Descripción detallada de la App',
-      web_url: '' 
+      web_url: '',
+      playstore_url: ''
     };
     const { data, error } = await supabase.from('landing_apps').insert([newApp]).select();
     if (error) alert('Error creando App: ' + error.message);
@@ -148,8 +155,8 @@ export default function AdminPanel() {
   };
 
   const saveApp = async (app: any) => {
-    const { id, name, tagline, description, web_url } = app;
-    const { error } = await supabase.from('landing_apps').update({ name, tagline, description, web_url }).eq('id', id);
+    const { id, name, tagline, description, web_url, playstore_url } = app;
+    const { error } = await supabase.from('landing_apps').update({ name, tagline, description, web_url, playstore_url }).eq('id', id);
     if (error) alert('Error al guardar: ' + error.message);
     else alert('App guardada correctamente');
   };
@@ -169,8 +176,15 @@ export default function AdminPanel() {
   };
 
   const saveFeature = async (feature: any) => {
-    const { id, title, description } = feature;
-    const { error } = await supabase.from('landing_features').update({ title, description }).eq('id', id);
+    const { id, title, description, problem_title, problem_desc, solution_title, solution_desc } = feature;
+    const { error } = await supabase.from('landing_features').update({ 
+      title: problem_title || title, 
+      description: problem_desc || description,
+      problem_title,
+      problem_desc,
+      solution_title,
+      solution_desc
+    }).eq('id', id);
     if (error) alert('Error al guardar: ' + error.message);
     else alert('Guardado correctamente');
   };
@@ -182,12 +196,16 @@ export default function AdminPanel() {
     const newFeature = {
       app_id: appId,
       order_index: newOrderIndex,
-      title: 'Nueva Característica',
-      description: 'Descripción breve de la nueva característica...'
+      title: 'Nuevo Problema',
+      description: 'Descripción del problema...',
+      problem_title: 'Nuevo Problema',
+      problem_desc: 'Descripción del problema...',
+      solution_title: 'Nueva Solución',
+      solution_desc: 'Descripción de la solución...'
     };
 
     const { data, error } = await supabase.from('landing_features').insert([newFeature]).select();
-    if (error) alert('Error creando característica: ' + error.message);
+    if (error) alert('Error creando bloque: ' + error.message);
     else if (data) setFeatures([...features, data[0]]);
   };
 
@@ -321,6 +339,16 @@ export default function AdminPanel() {
                   style={{ flex: 1, padding: '0.8rem', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '8px' }} 
                 />
               </div>
+
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <label style={{ color: '#10b981', width: '120px', fontWeight: 'bold' }}>Play Store URL:</label>
+                <input 
+                  placeholder="https://play.google.com/store/apps/details?id=com.tuapp"
+                  value={app.playstore_url || ''} 
+                  onChange={(e) => setApps(apps.map(a => a.id === app.id ? { ...a, playstore_url: e.target.value } : a))} 
+                  style={{ flex: 1, padding: '0.8rem', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '8px' }} 
+                />
+              </div>
             </div>
 
             <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
@@ -330,54 +358,95 @@ export default function AdminPanel() {
 
           {/* APP FEATURES */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingTop: '2rem', borderTop: '1px solid #333' }}>
-            <h2 style={{ color: '#eab308', fontSize: '1.4rem' }}>Características de esta App</h2>
-            <button onClick={() => addNewFeature(app.id)} className="btn-primary" style={{ padding: '0.5rem 1rem' }}><Plus size={16} /> Nueva Característica</button>
+            <h2 style={{ color: '#eab308', fontSize: '1.4rem' }}>Bloques del Embudo (Problema/Solución)</h2>
+            <button onClick={() => addNewFeature(app.id)} className="btn-primary" style={{ padding: '0.5rem 1rem' }}><Plus size={16} /> Nuevo Bloque</button>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {appFeatures.map((feature) => (
-              <div key={feature.id} style={{ display: 'flex', flexDirection: 'column', padding: '1.5rem', background: '#111', borderRadius: '16px', borderLeft: '4px solid #eab308', gap: '1rem' }}>
+              <div key={feature.id} style={{ display: 'flex', flexDirection: 'column', padding: '1.5rem', background: '#111', borderRadius: '16px', borderLeft: '4px solid #eab308', gap: '1.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                      <span style={{ color: '#eab308', fontWeight: 'bold' }}>{feature.order_index}.</span>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    
+                    {/* PROBLEMA */}
+                    <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '1rem', borderRadius: '12px', borderLeft: '4px solid #ef4444' }}>
+                      <h4 style={{ color: '#ef4444', margin: '0 0 0.5rem 0' }}>Sección: EL PROBLEMA</h4>
                       <input 
-                        value={feature.title} 
-                        onChange={(e) => handleUpdateFeature(feature.id, 'title', e.target.value)} 
-                        style={{ flex: 1, padding: '0.5rem', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '8px', fontWeight: 'bold' }} 
+                        placeholder="Estadística o Título del Problema"
+                        value={feature.problem_title || feature.title || ''} 
+                        onChange={(e) => handleUpdateFeature(feature.id, 'problem_title', e.target.value)} 
+                        style={{ width: '100%', padding: '0.5rem', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '8px', fontWeight: 'bold', marginBottom: '0.5rem' }} 
+                      />
+                      <textarea 
+                        placeholder="Descripción detallada del dolor/problema..."
+                        value={feature.problem_desc || feature.description || ''} 
+                        onChange={(e) => handleUpdateFeature(feature.id, 'problem_desc', e.target.value)} 
+                        style={{ width: '100%', padding: '0.5rem', background: '#222', color: '#ccc', border: '1px solid #444', borderRadius: '8px', minHeight: '60px', fontFamily: 'inherit' }} 
                       />
                     </div>
-                    
-                    <textarea 
-                      value={feature.description} 
-                      onChange={(e) => handleUpdateFeature(feature.id, 'description', e.target.value)} 
-                      style={{ width: '100%', padding: '0.5rem', background: '#222', color: '#ccc', border: '1px solid #444', borderRadius: '8px', minHeight: '60px', fontFamily: 'inherit' }} 
-                    />
+
+                    {/* SOLUCION */}
+                    <div style={{ background: 'rgba(74, 222, 128, 0.1)', padding: '1rem', borderRadius: '12px', borderLeft: '4px solid #4ade80' }}>
+                      <h4 style={{ color: '#4ade80', margin: '0 0 0.5rem 0' }}>Sección: LA SOLUCIÓN</h4>
+                      <input 
+                        placeholder="Título de la Solución"
+                        value={feature.solution_title || ''} 
+                        onChange={(e) => handleUpdateFeature(feature.id, 'solution_title', e.target.value)} 
+                        style={{ width: '100%', padding: '0.5rem', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '8px', fontWeight: 'bold', marginBottom: '0.5rem' }} 
+                      />
+                      <textarea 
+                        placeholder="Descripción de cómo lo resuelve..."
+                        value={feature.solution_desc || ''} 
+                        onChange={(e) => handleUpdateFeature(feature.id, 'solution_desc', e.target.value)} 
+                        style={{ width: '100%', padding: '0.5rem', background: '#222', color: '#ccc', border: '1px solid #444', borderRadius: '8px', minHeight: '60px', fontFamily: 'inherit' }} 
+                      />
+                    </div>
+
                   </div>
                   
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <button onClick={() => saveFeature(feature)} className="btn-primary" style={{ padding: '0.6rem' }} title="Guardar Textos"><Save size={18} /></button>
+                    <button onClick={() => saveFeature(feature)} className="btn-primary" style={{ padding: '0.6rem' }} title="Guardar Bloque"><Save size={18} /></button>
                     <button onClick={() => deleteFeature(feature.id)} style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', border: 'none', padding: '0.6rem', borderRadius: '12px', cursor: 'pointer' }} title="Eliminar"><Trash2 size={18} /></button>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#222', borderRadius: '12px' }}>
-                  {feature.media_url ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#4ade80', fontSize: '0.9rem' }}>
-                      <CheckCircle size={16} /> Media Actual: <a href={feature.media_url} target="_blank" rel="noreferrer" style={{ color: '#4ade80', textDecoration: 'underline' }}>Ver archivo</a>
-                    </div>
-                  ) : (
-                    <span style={{ color: '#f87171', fontSize: '0.9rem' }}>Sin imagen/video explicativo</span>
-                  )}
-                  
-                  <label className="btn-secondary" style={{ cursor: 'pointer', padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
-                    {uploadingId === `feature_${feature.id}` ? 'Subiendo...' : <><Video size={16} style={{ marginRight: '5px', display: 'inline' }} /> Subir Video/Img Explicativo</>}
-                    <input type="file" accept="video/*,image/*" style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, 'feature', feature.id)} disabled={uploadingId !== null} />
-                  </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  {/* IMAGEN ANTES */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '1rem', background: '#222', borderRadius: '12px' }}>
+                    <span style={{ color: '#ef4444', fontSize: '0.9rem', fontWeight: 'bold' }}>Imagen del Problema (Antes)</span>
+                    {feature.before_image_url || feature.media_url ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#4ade80', fontSize: '0.9rem' }}>
+                        <CheckCircle size={16} /> <a href={feature.before_image_url || feature.media_url} target="_blank" rel="noreferrer" style={{ color: '#4ade80', textDecoration: 'underline' }}>Ver archivo</a>
+                      </div>
+                    ) : (
+                      <span style={{ color: '#f87171', fontSize: '0.9rem' }}>Sin imagen</span>
+                    )}
+                    <label className="btn-secondary" style={{ cursor: 'pointer', padding: '0.5rem 1rem', fontSize: '0.85rem', textAlign: 'center' }}>
+                      {uploadingId === `feature_before_${feature.id}` ? 'Subiendo...' : <><Video size={16} style={{ marginRight: '5px', display: 'inline' }} /> Subir Imagen/Video</>}
+                      <input type="file" accept="video/*,image/*" style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, 'feature_before', feature.id)} disabled={uploadingId !== null} />
+                    </label>
+                  </div>
+
+                  {/* IMAGEN DESPUES */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '1rem', background: '#222', borderRadius: '12px' }}>
+                    <span style={{ color: '#4ade80', fontSize: '0.9rem', fontWeight: 'bold' }}>Imagen de la Solución (Después)</span>
+                    {feature.after_image_url ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#4ade80', fontSize: '0.9rem' }}>
+                        <CheckCircle size={16} /> <a href={feature.after_image_url} target="_blank" rel="noreferrer" style={{ color: '#4ade80', textDecoration: 'underline' }}>Ver archivo</a>
+                      </div>
+                    ) : (
+                      <span style={{ color: '#f87171', fontSize: '0.9rem' }}>Sin imagen</span>
+                    )}
+                    <label className="btn-secondary" style={{ cursor: 'pointer', padding: '0.5rem 1rem', fontSize: '0.85rem', textAlign: 'center' }}>
+                      {uploadingId === `feature_after_${feature.id}` ? 'Subiendo...' : <><Video size={16} style={{ marginRight: '5px', display: 'inline' }} /> Subir Imagen/Video</>}
+                      <input type="file" accept="video/*,image/*" style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, 'feature_after', feature.id)} disabled={uploadingId !== null} />
+                    </label>
+                  </div>
                 </div>
+
               </div>
             ))}
-            {appFeatures.length === 0 && <p style={{ color: '#aaa', textAlign: 'center', padding: '2rem' }}>No hay características para esta app todavía.</p>}
+            {appFeatures.length === 0 && <p style={{ color: '#aaa', textAlign: 'center', padding: '2rem' }}>No hay bloques creados para esta app todavía.</p>}
           </div>
 
         </div>

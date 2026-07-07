@@ -396,6 +396,11 @@ export default function App() {
                     <ExternalLink size={20} /> Utilizar Online
                   </a>
                 )}
+                {activeApp.playstore_url && (
+                  <a href={activeApp.playstore_url} target="_blank" rel="noreferrer" className="btn-secondary" style={{ background: '#ec4899', color: '#fff', borderColor: '#ec4899', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Smartphone size={20} /> Ver en Play Store
+                  </a>
+                )}
               </div>
             )}
           </div>
@@ -403,6 +408,10 @@ export default function App() {
           {funnels[activeApp.name] && !activeApp.isPlaceholder ? (
             <SalesFunnelView 
               funnel={funnels[activeApp.name]} 
+              dbFeatures={appFeatures}
+              appWebUrl={activeApp.web_url}
+              appApkUrl={activeApp.apk_url}
+              appPlaystoreUrl={activeApp.playstore_url}
               onCTA={() => document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth' })} 
             />
           ) : (

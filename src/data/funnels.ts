@@ -529,7 +529,7 @@ export const funnels: Record<string, FunnelData> = {
       {
         id: 'p_5inco_1',
         name: 'Plan Único Fila Virtual',
-        price: '35.000',
+        price: '45.000',
         period: 'mes',
         description: 'Turnos virtuales ilimitados y alertas multicanal para erradicar las colas de tu local.',
         recommended: true,

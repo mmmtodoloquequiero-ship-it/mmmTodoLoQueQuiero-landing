@@ -8,10 +8,14 @@ import type { FunnelData } from '../data/funnels';
 
 interface SalesFunnelViewProps {
   funnel: FunnelData;
+  dbFeatures?: any[];
+  appWebUrl?: string;
+  appApkUrl?: string;
+  appPlaystoreUrl?: string;
   onCTA: () => void;
 }
 
-export default function SalesFunnelView({ funnel, onCTA }: SalesFunnelViewProps) {
+export default function SalesFunnelView({ funnel, dbFeatures, appWebUrl, appApkUrl, appPlaystoreUrl, onCTA }: SalesFunnelViewProps) {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const [expandedFeatures, setExpandedFeatures] = useState<Record<string, boolean>>({});
   const [currentTestimonialIndex, setCurrentTestimonialIndex] = useState(0);
@@ -93,7 +97,16 @@ export default function SalesFunnelView({ funnel, onCTA }: SalesFunnelViewProps)
 
       {/* 3. INTERLEAVED FEATURES & STORYTELLING */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(3rem, 6vw, 6rem)' }}>
-        {funnel.interleavedFeatures.map((feat) => (
+        {(dbFeatures && dbFeatures.some(f => f.problem_title) ? dbFeatures.map(f => ({
+            id: f.id,
+            stat: f.problem_title || f.title,
+            problemDesc: f.problem_desc || f.description,
+            solutionTitle: f.solution_title || f.title,
+            solutionDesc: f.solution_desc || f.description,
+            imageBefore: f.before_image_url || f.media_url,
+            imageAfter: f.after_image_url,
+            iconName: f.icon_name || 'CheckCircle'
+        })) : funnel.interleavedFeatures).map((feat) => (
           <div key={feat.id} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
             
             {/* Red Box: The Problem */}
@@ -130,15 +143,33 @@ export default function SalesFunnelView({ funnel, onCTA }: SalesFunnelViewProps)
             </div>
 
             {/* Micro CTA */}
-            <div style={{ marginLeft: 'clamp(1rem, 5vw, 4rem)', marginTop: '0.5rem' }}>
+            <div style={{ marginLeft: 'clamp(1rem, 5vw, 4rem)', marginTop: '0.5rem', display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
                <button 
-                  onClick={onCTA}
+                  onClick={() => {
+                    if (appWebUrl) {
+                      window.open(appWebUrl, '_blank');
+                    } else {
+                      onCTA();
+                    }
+                  }}
                   style={{ background: 'rgba(234, 179, 8, 0.1)', border: '1px solid #eab308', color: '#eab308', padding: '0.8rem 1.5rem', borderRadius: '50px', cursor: 'pointer', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.3s ease' }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = '#eab308'; e.currentTarget.style.color = '#000'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(234, 179, 8, 0.1)'; e.currentTarget.style.color = '#eab308'; }}
                >
-                  ¿Convencido? Iniciá tus 14 días gratis hoy <ArrowRight size={18} />
+                  ¿Ya estás listo para probar la app? <ArrowRight size={18} />
                </button>
+
+               {appApkUrl && (
+                  <a href={appApkUrl} className="btn-secondary" style={{ padding: '0.8rem 1.5rem', borderRadius: '50px', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', background: 'rgba(74, 222, 128, 0.1)', color: '#4ade80', border: '1px solid #4ade80' }}>
+                    Descargar APK
+                  </a>
+               )}
+
+               {appPlaystoreUrl && (
+                  <a href={appPlaystoreUrl} target="_blank" rel="noreferrer" className="btn-secondary" style={{ padding: '0.8rem 1.5rem', borderRadius: '50px', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', background: 'rgba(236, 72, 153, 0.1)', color: '#ec4899', border: '1px solid #ec4899' }}>
+                    Ver en Play Store
+                  </a>
+               )}
             </div>
 
           </div>
